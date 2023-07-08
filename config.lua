@@ -9,7 +9,7 @@ lvim.builtin.terminal.active = true
 lvim.builtin.nvimtree.setup.view.side = "left"
 lvim.builtin.nvimtree.setup.renderer.icons.show.git = false
 vim.opt.relativenumber = true
-lvim.format_on_save.enabled = true
+lvim.format_on_save.enabled = false
 
 lvim.builtin.treesitter.ensure_installed = {
   "bash",
@@ -31,7 +31,8 @@ lvim.builtin.treesitter.highlight.enable = true
 lvim.builtin.lualine.sections.lualine_a = {
   { 'mode', separator = { left = '' }, right_padding = 2 },
 }
-lvim.builtin.lualine.sections.lualine_z = { { 'location', separator = { right = '' }, left_padding = 2 }, }
+lvim.builtin.lualine.sections.lualine_z = { { 'location', separator = { right = '' }, left_padding = 2 },
+}
 
 vim.opt.foldmethod = "expr"
 vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
@@ -135,6 +136,34 @@ lvim.plugins = {
       require("nvim-ts-autotag").setup()
     end,
   },
+  {
+    "ggandor/leap.nvim",
+    config = function()
+      require('leap').add_default_mappings()
+    end,
+
+  }, {
+  'ethanholz/nvim-lastplace'
+}, {
+  'iamcco/markdown-preview.nvim'
+},
+  {
+    'Exafunction/codeium.vim',
+    config = function()
+      -- Change '<C-g>' here to any keycode you like.
+
+      vim.keymap.set('i', '<Right>', function() return vim.fn['codeium#Accept']() end, { expr = true })
+      vim.keymap.set('i', '<c-;>', function() return vim.fn['codeium#CycleCompletions'](1) end, { expr = true })
+      vim.keymap.set('i', '<c-,>', function() return vim.fn['codeium#CycleCompletions'](-1) end, { expr = true })
+      vim.keymap.set('i', '<c-x>', function() return vim.fn['codeium#Clear']() end, { expr = true })
+    end
+  },
+  {
+    'linrongbin16/lsp-progress.nvim',
+    config = function()
+      require('lsp-progress').setup()
+    end
+  }
 }
 
 lvim.builtin.terminal.open_mapping = "<c-t>"
@@ -167,9 +196,8 @@ local function quickfix()
     apply = true
   })
 end
-
 vim.keymap.set('n', '<leader>qf', quickfix, opts)
-vim.keymap.set('n', '<leader>p', 'pgvy')
+vim.keymap.set('v', '<leader>p', 'pgvy')
 vim.keymap.set('v', '<leader>y', '"+y')
 vim.keymap.set('n', '<leader>yy', function()
   require('telescope').extensions.neoclip.default()
@@ -178,6 +206,9 @@ vim.keymap.set('n', '<A-?>', ':bdelete<CR>')
 vim.keymap.set('n', '<A-?>', ':bdelete<CR>')
 vim.keymap.set('n', '<Tab>', '$')
 vim.keymap.set('v', '<Tab>', '$')
+vim.keymap.set('n', '<leader>S', '<cmd>lua require("spectre").open()<CR>', {
+  desc = "Open Spectre"
+})
 
 vim.keymap.set("n", "<leader>rn", function()
   return ":IncRename " .. vim.fn.expand("<cword>")
@@ -232,8 +263,19 @@ local function update_wakatime()
 end
 
 set_interval(5000, update_wakatime)
-
+local components = require("lvim.core.lualine.components")
 local function get_wakatime()
   return current_time
 end
 lvim.builtin.lualine.sections.lualine_y = { get_wakatime }
+lvim.builtin.lualine.sections.lualine_x = { components.lsp, 'filetype',
+  { "require('lsp-progress').progress()" } }
+
+local formatters = require "lvim.lsp.null-ls.formatters"
+formatters.setup {
+  { name = "black" },
+  {
+    name = "eslint_d",
+    filetypes = { "typescript", "typescriptreact", "vue" },
+  },
+}
